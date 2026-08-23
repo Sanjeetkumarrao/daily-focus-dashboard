@@ -1,4 +1,4 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
     {
@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
             lowercase: true,
             trim: true,
         },
-        password: {
+        passwordHash: {
             type: String,
             required: true,
         },
@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema(
         preferences: {
             theme: {
                 type: String,
-                enum: ["light", "derk", "system"],
+                enum: ["dark", "system", "light",],
                 default: "system",
             },
             notifications: {
@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema(
             },
             timezone: {
                 type: String,
-                default: "Asia/Kolkata",
+                default: "Asia/Kolkata"
             },
         },
     },
@@ -42,6 +42,5 @@ const userSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
-
 
 export default mongoose.model("User", userSchema);
