@@ -25,7 +25,7 @@ const taskSchema = new mongoose.Schema(
         priority: {
             type: String,
             enum: ["low", "medium", "high"],
-            default: "pending",
+            default: "low",
         },
         status: {
             type: String,
@@ -45,4 +45,4 @@ const taskSchema = new mongoose.Schema(
     }
 );
 
-export default mongoose.model("Task", taskSchema);
+export default mongoose.models.Task || mongoose.model("Task", taskSchema);

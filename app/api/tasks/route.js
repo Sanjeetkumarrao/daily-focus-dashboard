@@ -1,0 +1,53 @@
+import getAuthenticatedUser from "@/helpers/cookieVerify";
+import dbConnect from "@/lib/db";
+import Task from "@/models/Task";
+
+export async function POST(request){
+    try {
+        const body = await request.json();
+        const title = body.title;
+        const description = body.description
+
+        if(!title || !description){
+            return Response.json(
+                {message: "Fill the required fields."},
+                {status:400},
+            )
+        }
+        
+        const cleanTitle = title.trim();
+        const cleanDescription = description.trim();
+
+        if(cleanTitle.length < 2 || cleanDescription.length < 6 ){
+            return Response.json(
+                {message: "inter valid title and description."},
+                {status: 400}
+            )
+        }
+
+        const user = await getAuthenticatedUser();
+
+        await dbConnect();
+
+        const task = await Task.create({
+            userId: user._id,
+            title: cleanTitle,
+            description: cleanDescription
+        })
+
+        return Response.json(
+            {
+                message: "Task created",
+                task
+            },
+            {status: 201},
+        )
+    } catch (error) {
+        return Response.json(
+            {
+                message: "error while creating task"
+            },
+            {status: 401}
+        )
+    }
+}
