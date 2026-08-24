@@ -47,7 +47,35 @@ export async function POST(request){
             {
                 message: "error while creating task"
             },
-            {status: 401}
+            { status: 500 }
+        )
+    }
+}
+
+
+
+export async function GET(){
+    try {
+        const user = await getAuthenticatedUser();
+        await dbConnect();
+        const tasks = await Task.find({userId: user._id});
+        if(tasks.length === 0){
+            return Response.json(
+                {message: "no tasks yet."},
+                {status: 200}
+            )
+        }
+
+        return Response.json(
+            {message:"Tasks fetched successfully.",
+                tasks
+            },
+            {status: 200}
+        )
+    } catch (error) {
+        return Response.json(
+            {message: "Invalid credentials"},
+            {status: 500}
         )
     }
 }
