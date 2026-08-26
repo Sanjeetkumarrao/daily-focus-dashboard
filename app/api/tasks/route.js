@@ -53,7 +53,6 @@ export async function POST(request){
 }
 
 
-
 export async function GET(){
     try {
         const user = await getAuthenticatedUser();
@@ -79,3 +78,4 @@ export async function GET(){
         )
     }
 }
+
