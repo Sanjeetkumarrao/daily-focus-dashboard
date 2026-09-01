@@ -1,0 +1,293 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+    getTasks,
+    logoutUser,
+} from "@/lib/api";
+
+export default function DashboardClient({ user }) {
+    const router = useRouter();
+
+    const [tasks, setTasks] = useState([]);
+    const [status, setStatus] = useState("");
+    const [priority, setPriority] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    async function loadTasks() {
+        try {
+            setLoading(true);
+            setError("");
+
+            const data = await getTasks({
+                status,
+                priority,
+            });
+
+            setTasks(data.tasks || []);
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        loadTasks();
+    }, [status, priority]);
+
+    async function handleLogout() {
+        try {
+            await logoutUser();
+            router.push("/login");
+        } catch (error) {
+            setError(error.message);
+        }
+    }
+
+    return (
+        <main className="min-h-screen bg-[#f3f0e8] text-[#171717]">
+
+            {/* Navbar */}
+
+            <nav className="border-b border-[#d8d4ca] bg-[#faf9f5]">
+                <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 border-2 border-[#171717] flex items-center justify-center font-black">
+                            D
+                        </div>
+
+                        <span className="font-bold tracking-wide">
+                            DAILY FOCUS
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        <span className="text-sm font-semibold">
+                            {user.name}
+                        </span>
+
+                        <button
+                            onClick={handleLogout}
+                            className="text-sm font-semibold underline underline-offset-4 hover:text-[#e87532] transition"
+                        >
+                            Logout
+                        </button>
+                    </div>
+
+                </div>
+            </nav>
+
+
+            {/* Main */}
+
+            <section className="max-w-6xl mx-auto px-6 py-12">
+
+                {/* Header */}
+
+                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+
+                    <div>
+                        <p className="text-sm uppercase tracking-[0.18em] text-[#e87532] font-bold mb-3">
+                            Your workspace
+                        </p>
+
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-none">
+                            Good to see you,
+                            <br />
+                            {user.name}.
+                        </h1>
+
+                        <p className="text-[#77736b] mt-4">
+                            Keep your priorities clear and your day focused.
+                        </p>
+                    </div>
+
+                    <button
+                        className="bg-[#171717] text-white px-6 py-3 font-bold hover:bg-[#e87532] transition"
+                    >
+                        + New Task
+                    </button>
+
+                </div>
+
+
+                {/* Filters */}
+
+                <div className="border-y border-[#d8d4ca] py-5 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+
+                    <div className="flex flex-wrap gap-2">
+
+                        <button
+                            onClick={() => setStatus("")}
+                            className={`px-4 py-2 text-sm font-semibold border ${
+                                status === ""
+                                    ? "bg-[#171717] text-white border-[#171717]"
+                                    : "border-[#c9c5bb] hover:border-[#171717]"
+                            }`}
+                        >
+                            All
+                        </button>
+
+                        <button
+                            onClick={() => setStatus("pending")}
+                            className={`px-4 py-2 text-sm font-semibold border ${
+                                status === "pending"
+                                    ? "bg-[#171717] text-white border-[#171717]"
+                                    : "border-[#c9c5bb] hover:border-[#171717]"
+                            }`}
+                        >
+                            Pending
+                        </button>
+
+                        <button
+                            onClick={() => setStatus("completed")}
+                            className={`px-4 py-2 text-sm font-semibold border ${
+                                status === "completed"
+                                    ? "bg-[#171717] text-white border-[#171717]"
+                                    : "border-[#c9c5bb] hover:border-[#171717]"
+                            }`}
+                        >
+                            Completed
+                        </button>
+
+                    </div>
+
+
+                    <select
+                        value={priority}
+                        onChange={(e) => setPriority(e.target.value)}
+                        className="bg-transparent border border-[#c9c5bb] px-4 py-2 text-sm outline-none focus:border-[#171717]"
+                    >
+                        <option value="">All priorities</option>
+                        <option value="low">Low priority</option>
+                        <option value="medium">Medium priority</option>
+                        <option value="high">High priority</option>
+                    </select>
+
+                </div>
+
+
+                {/* Error */}
+
+                {error && (
+                    <div className="border-l-4 border-red-500 bg-red-50 px-4 py-3 mb-6">
+                        <p className="text-sm text-red-600">
+                            {error}
+                        </p>
+                    </div>
+                )}
+
+
+                {/* Task Heading */}
+
+                <div className="flex items-center justify-between mb-5">
+
+                    <h2 className="text-xl font-bold">
+                        Your Tasks
+                    </h2>
+
+                    <span className="text-sm text-[#77736b]">
+                        {tasks.length} task{tasks.length !== 1 ? "s" : ""}
+                    </span>
+
+                </div>
+
+
+                {/* Task List */}
+
+                {loading ? (
+                    <div className="bg-[#faf9f5] border border-[#d8d4ca] p-8">
+                        <p className="text-[#77736b]">
+                            Loading your tasks...
+                        </p>
+                    </div>
+                ) : tasks.length === 0 ? (
+                    <div className="bg-[#faf9f5] border border-dashed border-[#c9c5bb] p-12 text-center">
+
+                        <p className="text-lg font-bold">
+                            No tasks found.
+                        </p>
+
+                        <p className="text-sm text-[#77736b] mt-2">
+                            Your workspace is clear for now.
+                        </p>
+
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+
+                        {tasks.map((task) => (
+                            <article
+                                key={task._id}
+                                className="bg-[#faf9f5] border border-[#d8d4ca] p-5 hover:border-[#171717] transition"
+                            >
+
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+
+                                    <div>
+
+                                        <div className="flex items-center gap-3 flex-wrap">
+
+                                            <h3 className="text-lg font-bold">
+                                                {task.title}
+                                            </h3>
+
+                                            <span className="text-xs uppercase tracking-wide border border-[#c9c5bb] px-2 py-1">
+                                                {task.priority}
+                                            </span>
+
+                                        </div>
+
+                                        <p className="text-sm text-[#77736b] mt-2">
+                                            {task.description}
+                                        </p>
+
+                                        {task.dueDate && (
+                                            <p className="text-xs text-[#99958c] mt-3">
+                                                Due:{" "}
+                                                {new Date(
+                                                    task.dueDate
+                                                ).toLocaleDateString()}
+                                            </p>
+                                        )}
+
+                                    </div>
+
+
+                                    <div className="flex items-center gap-5">
+
+                                        <span
+                                            className={`text-xs font-bold uppercase tracking-wide ${
+                                                task.status === "completed"
+                                                    ? "text-[#e87532]"
+                                                    : "text-[#77736b]"
+                                            }`}
+                                        >
+                                            {task.status}
+                                        </span>
+
+                                        <button
+                                            className="text-sm font-semibold underline underline-offset-4 hover:text-[#e87532]"
+                                        >
+                                            Edit
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </article>
+                        ))}
+
+                    </div>
+                )}
+
+            </section>
+
+        </main>
+    );
+}
