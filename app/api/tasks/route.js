@@ -58,6 +58,7 @@ export async function GET(request){
         const {searchParams} = new URL(request.url);
 
         const status = searchParams.get("status");
+        const priority = searchParams.get("priority");
 
         const user = await getAuthenticatedUser();
         await dbConnect();
@@ -74,6 +75,16 @@ export async function GET(request){
                 )
             }
             filter.status = status;
+        }
+
+        if(priority !== null){
+            if(!["low","medium" ,"high"].includes(priority)){
+                return Response.json(
+                    {message: "Invalid priority"},
+                    {status: 400}
+                )
+            }
+            filter.priority = priority;
         }
 
         const tasks = await Task.find(filter);
