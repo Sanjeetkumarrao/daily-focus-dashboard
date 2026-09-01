@@ -32,8 +32,11 @@ export async function POST(request){
         const task = await Task.create({
             userId: user._id,
             title: cleanTitle,
-            description: cleanDescription
-        })
+            description: cleanDescription,
+            priority: body.priority,
+            category: body.category,
+            dueDate: body.dueDate,
+        });
 
         return Response.json(
             {

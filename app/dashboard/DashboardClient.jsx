@@ -6,6 +6,7 @@ import {
     getTasks,
     logoutUser,
 } from "@/lib/api";
+import CreateTaskForm from "@/components/tasks/CreateTaskForm";
 
 export default function DashboardClient({ user }) {
     const router = useRouter();
@@ -15,6 +16,7 @@ export default function DashboardClient({ user }) {
     const [priority, setPriority] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [showCreateForm, setShowCreateForm] = useState(false);
 
     async function loadTasks() {
         try {
@@ -107,6 +109,7 @@ export default function DashboardClient({ user }) {
                     </div>
 
                     <button
+                        onClick={() => setShowCreateForm(true)}
                         className="bg-[#171717] text-white px-6 py-3 font-bold hover:bg-[#e87532] transition"
                     >
                         + New Task
@@ -287,6 +290,18 @@ export default function DashboardClient({ user }) {
                 )}
 
             </section>
+
+            {showCreateForm && (
+                <CreateTaskForm
+                    onCreated={(newTask) => {
+                        setTasks((currentTasks) => [
+                            newTask,
+                            ...currentTasks,
+                        ]);
+                    }}
+                    onClose={() => setShowCreateForm(false)}
+                />
+            )}
 
         </main>
     );
