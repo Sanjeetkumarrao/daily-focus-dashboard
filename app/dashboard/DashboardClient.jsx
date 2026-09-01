@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import {
     getTasks,
     logoutUser,
+    updateTaskStatus,
 } from "@/lib/api";
 import CreateTaskForm from "@/components/tasks/CreateTaskForm";
+import EditTaskForm from "@/components/tasks/EditTaskForm";
 
 export default function DashboardClient({ user }) {
     const router = useRouter();
@@ -17,6 +19,7 @@ export default function DashboardClient({ user }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const [editingTask, setEditingTask] = useState(null);
 
     async function loadTasks() {
         try {
@@ -44,6 +47,37 @@ export default function DashboardClient({ user }) {
         try {
             await logoutUser();
             router.push("/login");
+        } catch (error) {
+            setError(error.message);
+        }
+    }
+
+    async function handleStatusChange(task) {
+        try {
+            const newStatus =
+                task.status === "completed"
+                    ? "pending"
+                    : "completed";
+
+            const response = await updateTaskStatus(
+                task._id,
+                newStatus
+            );
+
+            setTasks((currentTasks) =>
+                currentTasks.map((currentTask) =>
+                    currentTask._id === task._id
+                        ? {
+                            ...currentTask,
+                            status: newStatus,
+                            completedAt:
+                                newStatus === "completed"
+                                    ? new Date().toISOString()
+                                    : null,
+                        }
+                        : currentTask
+                )
+            );
         } catch (error) {
             setError(error.message);
         }
@@ -274,9 +308,19 @@ export default function DashboardClient({ user }) {
                                         </span>
 
                                         <button
+                                            onClick={() => setEditingTask(task)}
                                             className="text-sm font-semibold underline underline-offset-4 hover:text-[#e87532]"
                                         >
                                             Edit
+                                        </button>
+
+                                        <button
+                                            onClick={() => handleStatusChange(task)}
+                                            className="border border-[#171717] px-4 py-2 text-sm font-bold hover:bg-[#171717] hover:text-white"
+                                        >
+                                            {task.status === "completed"
+                                                ? "Mark pending"
+                                                : "Complete"}
                                         </button>
 
                                     </div>
@@ -300,6 +344,23 @@ export default function DashboardClient({ user }) {
                         ]);
                     }}
                     onClose={() => setShowCreateForm(false)}
+                />
+            )}
+
+
+            {editingTask && (
+                <EditTaskForm
+                    task={editingTask}
+                    onUpdated={(updatedTask) => {
+                        setTasks((currentTasks) =>
+                            currentTasks.map((task) =>
+                                task._id === updatedTask._id
+                                    ? updatedTask
+                                    : task
+                            )
+                        );
+                    }}
+                    onClose={() => setEditingTask(null)}
                 />
             )}
 
