@@ -6,6 +6,7 @@ import {
     getTasks,
     logoutUser,
     updateTaskStatus,
+    deleteTask,
 } from "@/lib/api";
 import CreateTaskForm from "@/components/tasks/CreateTaskForm";
 import EditTaskForm from "@/components/tasks/EditTaskForm";
@@ -76,6 +77,26 @@ export default function DashboardClient({ user }) {
                                     : null,
                         }
                         : currentTask
+                )
+            );
+        } catch (error) {
+            setError(error.message);
+        }
+    }
+
+    async function handleDelete(taskId) {
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this task?"
+        );
+
+        if (!confirmed) return;
+
+        try {
+            await deleteTask(taskId);
+
+            setTasks((currentTasks) =>
+                currentTasks.filter(
+                    (task) => task._id !== taskId
                 )
             );
         } catch (error) {
@@ -321,6 +342,13 @@ export default function DashboardClient({ user }) {
                                             {task.status === "completed"
                                                 ? "Mark pending"
                                                 : "Complete"}
+                                        </button>
+
+                                        <button
+                                            onClick={() => handleDelete(task._id)}
+                                            className="border border-[#171717] px-4 py-2 text-sm font-bold hover:bg-red-600 hover:text-white"
+                                        >
+                                            Delete
                                         </button>
 
                                     </div>
