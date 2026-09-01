@@ -59,6 +59,7 @@ export async function GET(request){
 
         const status = searchParams.get("status");
         const priority = searchParams.get("priority");
+        const sort = searchParams.get("sort");
 
         const user = await getAuthenticatedUser();
         await dbConnect();
@@ -87,7 +88,7 @@ export async function GET(request){
             filter.priority = priority;
         }
 
-        const tasks = await Task.find(filter);
+        const tasks = await Task.find(filter).sort({dueDate: 1});
 
         if(tasks.length === 0){
             return Response.json(
