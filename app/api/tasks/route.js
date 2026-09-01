@@ -53,29 +53,80 @@ export async function POST(request){
 }
 
 
-export async function GET(){
+export async function GET(request){
     try {
+        const {searchParams} = new URL(request.url);
+
+        const status = searchParams.get("status");
+
         const user = await getAuthenticatedUser();
         await dbConnect();
-        const tasks = await Task.find({userId: user._id});
+
+        const filter = {
+            userId: user._id
+        }
+
+        if(status !== null){
+            if(!["pending", "completed"].includes(status)){
+                return Response.json(
+                    {message: "Invalid status"},
+                    {status: 400}
+                )
+            }
+            filter.status = status;
+        }
+
+        const tasks = await Task.find(filter);
+
         if(tasks.length === 0){
             return Response.json(
-                {message: "no tasks yet."},
-                {status: 200}
-            )
+                {
+                    message: "No tasks found.",
+                    tasks: []
+                },
+                { status: 200 }
+            );
         }
 
         return Response.json(
-            {message:"Tasks fetched successfully.",
+            {
+                message: "Tasks fetched successfully.",
                 tasks
             },
-            {status: 200}
-        )
+            { status: 200 }
+        );
     } catch (error) {
         return Response.json(
-            {message: "Invalid credentials"},
-            {status: 500}
-        )
+            { message: "Internal server error." },
+            { status: 500 }
+        );
     }
 }
+
+
+// export async function GET(){
+//     try {
+//         const user = await getAuthenticatedUser();
+//         await dbConnect();
+//         const tasks = await Task.find({userId: user._id});
+//         if(tasks.length === 0){
+//             return Response.json(
+//                 {message: "no tasks yet."},
+//                 {status: 200}
+//             )
+//         }
+
+//         return Response.json(
+//             {message:"Tasks fetched successfully.",
+//                 tasks
+//             },
+//             {status: 200}
+//         )
+//     } catch (error) {
+//         return Response.json(
+//             {message: "Invalid credentials"},
+//             {status: 500}
+//         )
+//     }
+// }
 
