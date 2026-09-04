@@ -7,6 +7,8 @@ import {
     logoutUser,
     updateTaskStatus,
     deleteTask,
+    breakdownTask,
+    createTasksBulk,
 } from "@/lib/api";
 import CreateTaskForm from "@/components/tasks/CreateTaskForm";
 import EditTaskForm from "@/components/tasks/EditTaskForm";
@@ -21,6 +23,12 @@ export default function DashboardClient({ user }) {
     const [error, setError] = useState("");
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
+
+    // AI states
+    const [aiSteps, setAiSteps] = useState({});
+    const [aiLoading, setAiLoading] = useState(null);
+
+    const [convertingTask, setConvertingTask] = useState(null);
 
     async function loadTasks() {
         try {
@@ -60,7 +68,7 @@ export default function DashboardClient({ user }) {
                     ? "pending"
                     : "completed";
 
-            const response = await updateTaskStatus(
+            await updateTaskStatus(
                 task._id,
                 newStatus
             );
@@ -69,13 +77,13 @@ export default function DashboardClient({ user }) {
                 currentTasks.map((currentTask) =>
                     currentTask._id === task._id
                         ? {
-                            ...currentTask,
-                            status: newStatus,
-                            completedAt:
-                                newStatus === "completed"
-                                    ? new Date().toISOString()
-                                    : null,
-                        }
+                              ...currentTask,
+                              status: newStatus,
+                              completedAt:
+                                  newStatus === "completed"
+                                      ? new Date().toISOString()
+                                      : null,
+                          }
                         : currentTask
                 )
             );
@@ -99,8 +107,77 @@ export default function DashboardClient({ user }) {
                     (task) => task._id !== taskId
                 )
             );
+
+            // Remove AI steps of deleted task
+            setAiSteps((currentSteps) => {
+                const updatedSteps = { ...currentSteps };
+                delete updatedSteps[taskId];
+                return updatedSteps;
+            });
         } catch (error) {
             setError(error.message);
+        }
+    }
+
+    async function handleBreakdown(task) {
+        setError("");
+        setAiLoading(task._id);
+
+        try {
+            const response = await breakdownTask({
+                title: task.title,
+                description: task.description,
+                priority: task.priority,
+                category: task.category,
+            });
+
+            setAiSteps((prev) => ({
+                ...prev,
+                [task._id]: response.steps,
+            }));
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setAiLoading(null);
+        }
+    }
+
+
+    async function handleConvertToTasks(task) {
+        const steps = aiSteps[task._id];
+
+        if (!steps || steps.length === 0) {
+            return;
+        }
+
+        setError("");
+        setConvertingTask(task._id);
+
+        try {
+            const tasks = steps.map((step) => ({
+                title: step,
+                description: `Part of: ${task.title}`,
+                priority: task.priority,
+                category: task.category || "Other",
+            }));
+
+            const response = await createTasksBulk(tasks);
+
+            setTasks((currentTasks) => [
+                ...response.tasks,
+                ...currentTasks,
+            ]);
+
+            setAiSteps((currentSteps) => {
+                const updatedSteps = { ...currentSteps };
+                delete updatedSteps[task._id];
+                return updatedSteps;
+            });
+
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setConvertingTask(null);
         }
     }
 
@@ -249,7 +326,8 @@ export default function DashboardClient({ user }) {
                     </h2>
 
                     <span className="text-sm text-[#77736b]">
-                        {tasks.length} task{tasks.length !== 1 ? "s" : ""}
+                        {tasks.length} task
+                        {tasks.length !== 1 ? "s" : ""}
                     </span>
 
                 </div>
@@ -263,7 +341,9 @@ export default function DashboardClient({ user }) {
                             Loading your tasks...
                         </p>
                     </div>
+
                 ) : tasks.length === 0 ? (
+
                     <div className="bg-[#faf9f5] border border-dashed border-[#c9c5bb] p-12 text-center">
 
                         <p className="text-lg font-bold">
@@ -275,10 +355,13 @@ export default function DashboardClient({ user }) {
                         </p>
 
                     </div>
+
                 ) : (
+
                     <div className="space-y-3">
 
                         {tasks.map((task) => (
+
                             <article
                                 key={task._id}
                                 className="bg-[#faf9f5] border border-[#d8d4ca] p-5 hover:border-[#171717] transition"
@@ -286,7 +369,9 @@ export default function DashboardClient({ user }) {
 
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
 
-                                    <div>
+                                    {/* Task information */}
+
+                                    <div className="flex-1">
 
                                         <div className="flex items-center gap-3 flex-wrap">
 
@@ -313,10 +398,48 @@ export default function DashboardClient({ user }) {
                                             </p>
                                         )}
 
+
+                                        {/* AI Breakdown */}
+
+                                        {aiSteps[task._id] && (
+                                            <div className="mt-5 border-t border-[#d8d4ca] pt-4">
+
+                                                <h4 className="text-sm font-bold uppercase tracking-wide mb-3">
+                                                    AI Breakdown
+                                                </h4>
+
+                                                <ol className="list-decimal list-inside space-y-2">
+                                                    {aiSteps[task._id].map(
+                                                        (step, index) => (
+                                                            <li
+                                                                key={index}
+                                                                className="text-sm text-[#55514a]"
+                                                            >
+                                                                {step}
+                                                            </li>
+                                                        )
+                                                    )}
+                                                </ol>
+
+                                                <button
+                                                    onClick={() => handleConvertToTasks(task)}
+                                                    disabled={convertingTask === task._id}
+                                                    className="mt-4 bg-[#171717] text-white px-4 py-2 text-sm font-bold hover:bg-[#e87532] transition disabled:opacity-50"
+                                                >
+                                                    {convertingTask === task._id
+                                                        ? "Creating Tasks..."
+                                                        : "Convert to Tasks"}
+                                                </button>
+
+                                            </div>
+                                        )}
+
                                     </div>
 
 
-                                    <div className="flex items-center gap-5">
+                                    {/* Task actions */}
+
+                                    <div className="flex items-center gap-5 flex-wrap">
 
                                         <span
                                             className={`text-xs font-bold uppercase tracking-wide ${
@@ -328,15 +451,38 @@ export default function DashboardClient({ user }) {
                                             {task.status}
                                         </span>
 
+
+                                        {/* AI Breakdown Button */}
+
                                         <button
-                                            onClick={() => setEditingTask(task)}
+                                            onClick={() =>
+                                                handleBreakdown(task)
+                                            }
+                                            disabled={
+                                                aiLoading === task._id
+                                            }
+                                            className="border border-[#171717] px-4 py-2 text-sm font-bold hover:bg-[#e87532] hover:text-white transition disabled:opacity-50"
+                                        >
+                                            {aiLoading === task._id
+                                                ? "Thinking..."
+                                                : "AI Breakdown"}
+                                        </button>
+
+
+                                        <button
+                                            onClick={() =>
+                                                setEditingTask(task)
+                                            }
                                             className="text-sm font-semibold underline underline-offset-4 hover:text-[#e87532]"
                                         >
                                             Edit
                                         </button>
 
+
                                         <button
-                                            onClick={() => handleStatusChange(task)}
+                                            onClick={() =>
+                                                handleStatusChange(task)
+                                            }
                                             className="border border-[#171717] px-4 py-2 text-sm font-bold hover:bg-[#171717] hover:text-white"
                                         >
                                             {task.status === "completed"
@@ -344,8 +490,11 @@ export default function DashboardClient({ user }) {
                                                 : "Complete"}
                                         </button>
 
+
                                         <button
-                                            onClick={() => handleDelete(task._id)}
+                                            onClick={() =>
+                                                handleDelete(task._id)
+                                            }
                                             className="border border-[#171717] px-4 py-2 text-sm font-bold hover:bg-red-600 hover:text-white"
                                         >
                                             Delete
@@ -356,12 +505,17 @@ export default function DashboardClient({ user }) {
                                 </div>
 
                             </article>
+
                         ))}
 
                     </div>
+
                 )}
 
             </section>
+
+
+            {/* Create Task Modal */}
 
             {showCreateForm && (
                 <CreateTaskForm
@@ -375,6 +529,8 @@ export default function DashboardClient({ user }) {
                 />
             )}
 
+
+            {/* Edit Task Modal */}
 
             {editingTask && (
                 <EditTaskForm
