@@ -12,21 +12,23 @@ export default function SignupPage() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState("");
 
     async function handleSubmit(e) {
         e.preventDefault();
 
         setError("");
+        setMessage("");
         setLoading(true);
 
         try {
-            await signupUser({
+            const response = await signupUser({
                 name: username,
                 email,
                 password,
             });
 
-            router.push("/login");
+            setMessage("Please verify your email before logging in.");
         } catch (error) {
             setError(error.message);
         } finally {
@@ -182,6 +184,13 @@ export default function SignupPage() {
                                         {error}
                                     </p>
                                 </div>
+                            )}
+
+
+                            {message && (
+                                <p className="mb-3 text-center text-sm font-semibold text-green-600">
+                                    {message}
+                                </p>
                             )}
 
 
