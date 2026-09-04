@@ -11,5 +11,13 @@ export default async function DashboardPage() {
         redirect("/login");
     }
 
-    return <DashboardClient user={user} />;
+    const plainUser = {
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        isEmailVerified: user.isEmailVerified,
+    };
+
+    return <DashboardClient user={plainUser} />;
 }

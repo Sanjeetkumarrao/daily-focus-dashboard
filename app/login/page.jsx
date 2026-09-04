@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { loginUser } from "@/lib/api";
+import { loginUser, resendVerificationEmail } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -9,13 +9,21 @@ export default function LoginPage() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+
     const [error, setError] = useState("");
+    const [message, setMessage] = useState("");
+
     const [loading, setLoading] = useState(false);
+    const [resendLoading, setResendLoading] = useState(false);
+
+    const [showResend, setShowResend] = useState(false);
 
     async function handleSubmit(e) {
         e.preventDefault();
 
         setError("");
+        setMessage("");
+        setShowResend(false);
         setLoading(true);
 
         try {
@@ -27,19 +35,42 @@ export default function LoginPage() {
             router.push("/dashboard");
         } catch (error) {
             setError(error.message);
+
+            if (
+                error.message ===
+                "Please verify your email before logging in."
+            ) {
+                setShowResend(true);
+            }
         } finally {
             setLoading(false);
         }
     }
 
+    async function handleResendVerification() {
+        setError("");
+        setMessage("");
+        setResendLoading(true);
+
+        try {
+            const response = await resendVerificationEmail(email);
+
+            setMessage(response.message);
+            setShowResend(false);
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setResendLoading(false);
+        }
+    }
+
     return (
         <main className="min-h-screen bg-[#f3f0e8] text-[#171717] flex items-center justify-center p-5">
-
             <div className="w-full max-w-5xl min-h-[620px] bg-[#faf9f5] border border-[#d8d4ca] flex flex-col md:flex-row shadow-[8px_8px_0px_#171717]">
 
                 {/* Left Section */}
-                <section className="md:w-[48%] bg-[#171717] text-[#f3f0e8] p-8 md:p-12 flex flex-col justify-between">
 
+                <section className="md:w-[48%] bg-[#171717] text-[#f3f0e8] p-8 md:p-12 flex flex-col justify-between">
                     <div>
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 border border-[#f3f0e8] flex items-center justify-center font-bold">
@@ -77,13 +108,11 @@ export default function LoginPage() {
                             Focus • Plan • Finish
                         </p>
                     </div>
-
                 </section>
 
-
                 {/* Right Section */}
-                <section className="md:w-[52%] p-8 md:p-14 flex items-center">
 
+                <section className="md:w-[52%] p-8 md:p-14 flex items-center">
                     <div className="w-full max-w-md mx-auto">
 
                         <div className="mb-10">
@@ -100,9 +129,10 @@ export default function LoginPage() {
                             </p>
                         </div>
 
-
-                        <form onSubmit={handleSubmit} className="space-y-6">
-
+                        <form
+                            onSubmit={handleSubmit}
+                            className="space-y-6"
+                        >
                             <div>
                                 <label
                                     htmlFor="email"
@@ -115,13 +145,14 @@ export default function LoginPage() {
                                     id="email"
                                     type="email"
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) =>
+                                        setEmail(e.target.value)
+                                    }
                                     placeholder="you@example.com"
                                     required
                                     className="w-full bg-transparent border-b-2 border-[#c9c5bb] px-1 py-3 text-base outline-none focus:border-[#e87532] transition"
                                 />
                             </div>
-
 
                             <div>
                                 <div className="flex justify-between items-center mb-2">
@@ -141,13 +172,14 @@ export default function LoginPage() {
                                     id="password"
                                     type="password"
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    onChange={(e) =>
+                                        setPassword(e.target.value)
+                                    }
                                     placeholder="Enter your password"
                                     required
                                     className="w-full bg-transparent border-b-2 border-[#c9c5bb] px-1 py-3 text-base outline-none focus:border-[#e87532] transition"
                                 />
                             </div>
-
 
                             {error && (
                                 <div className="border-l-4 border-red-500 bg-red-50 px-4 py-3">
@@ -157,6 +189,26 @@ export default function LoginPage() {
                                 </div>
                             )}
 
+                            {message && (
+                                <div className="border-l-4 border-green-500 bg-green-50 px-4 py-3">
+                                    <p className="text-sm text-green-600">
+                                        {message}
+                                    </p>
+                                </div>
+                            )}
+
+                            {showResend && (
+                                <button
+                                    type="button"
+                                    onClick={handleResendVerification}
+                                    disabled={resendLoading}
+                                    className="text-sm font-semibold text-[#171717] underline underline-offset-4 hover:text-[#e87532] disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    {resendLoading
+                                        ? "Sending verification email..."
+                                        : "Resend verification email"}
+                                </button>
+                            )}
 
                             <button
                                 type="submit"
@@ -171,12 +223,11 @@ export default function LoginPage() {
                                     </span>
                                 )}
                             </button>
-
                         </form>
-
 
                         <p className="text-center text-sm text-[#77736b] mt-8">
                             New here?{" "}
+
                             <a
                                 href="/signup"
                                 className="text-[#171717] font-semibold underline underline-offset-4 hover:text-[#e87532]"
@@ -184,13 +235,9 @@ export default function LoginPage() {
                                 Create an account
                             </a>
                         </p>
-
                     </div>
-
                 </section>
-
             </div>
-
         </main>
     );
 }

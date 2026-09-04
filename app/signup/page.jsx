@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import { signupUser } from "@/lib/api";
-import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
-    const router = useRouter();
-
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
@@ -22,13 +20,15 @@ export default function SignupPage() {
         setLoading(true);
 
         try {
-            const response = await signupUser({
+            await signupUser({
                 name: username,
                 email,
                 password,
             });
 
-            setMessage("Please verify your email before logging in.");
+            setMessage(
+                "Please verify your email before logging in."
+            );
         } catch (error) {
             setError(error.message);
         } finally {
@@ -38,13 +38,11 @@ export default function SignupPage() {
 
     return (
         <main className="min-h-screen bg-[#f3f0e8] text-[#171717] flex items-center justify-center p-5">
-
             <div className="w-full max-w-5xl min-h-[620px] bg-[#faf9f5] border border-[#d8d4ca] flex flex-col md:flex-row-reverse shadow-[8px_8px_0px_#171717]">
 
                 {/* Left Section */}
 
                 <section className="md:w-[48%] bg-[#e87532] text-[#171717] p-8 md:p-12 flex flex-col justify-between">
-
                     <div>
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 border-2 border-[#171717] flex items-center justify-center font-black">
@@ -82,14 +80,11 @@ export default function SignupPage() {
                             One task at a time.
                         </p>
                     </div>
-
                 </section>
-
 
                 {/* Form Section */}
 
                 <section className="md:w-[52%] p-8 md:p-14 flex items-center">
-
                     <div className="w-full max-w-md mx-auto">
 
                         <div className="mb-9">
@@ -106,12 +101,10 @@ export default function SignupPage() {
                             </p>
                         </div>
 
-
                         <form
                             onSubmit={handleSubmit}
                             className="space-y-5"
                         >
-
                             <div>
                                 <label
                                     htmlFor="username"
@@ -132,7 +125,6 @@ export default function SignupPage() {
                                     className="w-full bg-transparent border-b-2 border-[#c9c5bb] px-1 py-3 outline-none focus:border-[#e87532] transition"
                                 />
                             </div>
-
 
                             <div>
                                 <label
@@ -155,7 +147,6 @@ export default function SignupPage() {
                                 />
                             </div>
 
-
                             <div>
                                 <label
                                     htmlFor="password"
@@ -177,7 +168,6 @@ export default function SignupPage() {
                                 />
                             </div>
 
-
                             {error && (
                                 <div className="border-l-4 border-red-500 bg-red-50 px-4 py-3">
                                     <p className="text-sm text-red-600">
@@ -186,13 +176,11 @@ export default function SignupPage() {
                                 </div>
                             )}
 
-
                             {message && (
                                 <p className="mb-3 text-center text-sm font-semibold text-green-600">
                                     {message}
                                 </p>
                             )}
-
 
                             <button
                                 type="submit"
@@ -209,12 +197,11 @@ export default function SignupPage() {
                                     </span>
                                 )}
                             </button>
-
                         </form>
-
 
                         <p className="text-center text-sm text-[#77736b] mt-8">
                             Already have an account?{" "}
+
                             <a
                                 href="/login"
                                 className="text-[#171717] font-semibold underline underline-offset-4 hover:text-[#e87532]"
@@ -222,13 +209,9 @@ export default function SignupPage() {
                                 Sign in
                             </a>
                         </p>
-
                     </div>
-
                 </section>
-
             </div>
-
         </main>
     );
 }
